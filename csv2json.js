@@ -1,9 +1,15 @@
 const fs = require("fs");
-const objectsCSV = fs.readFileSync("LM_LB_objects.csv", "utf8");
-const objecttagsCSV = fs.readFileSync("./LM_LB_objecttags.csv", "utf8");
+const objectsCSV = fs.readFileSync(
+  __dirname + "/temp/lmlb_objects.csv",
+  "utf8"
+);
+const objecttagsCSV = fs.readFileSync(
+  __dirname + "/temp/lmlb_objecttags.csv",
+  "utf8"
+);
 
 const csv2js = (csv) => {
-  const rows = csv.split("\n").map((r) => r.trim().split(","));
+  const rows = csv.split("\n").map((r) => r.trim().split(";"));
   const header = rows.shift();
   console.log({ header });
   const res = [];
