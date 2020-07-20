@@ -85,9 +85,9 @@ function handlePOST()
 			local object = obj.object
 			local currentTags = obj.currentTags or {}
 
-			if object.name ~= c.name then table.insert(withDiffName, c.id) end
+			if object.name ~= "" and object.name ~= c.name then table.insert(withDiffName, c.id) end
 			if object.type ~= c.type then table.insert(withDiffType, c.id) end
-			if object.comment ~= c.comment then table.insert(withDiffComment, c.id) end
+			if object.comment ~= "" and object.comment ~= c.comment then table.insert(withDiffComment, c.id) end
 			if object.enums ~= c.enums then table.insert(withDiffEnums, c.id) end
 			if object.tagcache ~= c.tagcache then
 				table.insert(withDiffTags, c.id)
