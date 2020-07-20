@@ -49,13 +49,15 @@
   background: aliceblue;
 }
 
-.close-app {
+.header-buttons {
+  width: 50%;
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  margin-left: 40px;
+}
+
+.close-app {
   cursor: pointer;
-  width: 50%;
 }
 
 .close-app i {

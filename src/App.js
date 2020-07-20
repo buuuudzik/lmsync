@@ -110,8 +110,10 @@ class App extends React.Component {
         ) : null}
         <header className="App-header">
           <div className="app-title">LM Sync</div>
-          <div className="close-app" onClick={this.closeApp}>
-            <i className="fa fa-window-close"></i>
+          <div className="header-buttons">
+            <div className="close-app" onClick={this.closeApp}>
+              <i className="fa fa-window-close"></i>
+            </div>
           </div>
         </header>
         <div className="container">
@@ -175,15 +177,13 @@ class App extends React.Component {
                       />
                     </div>
                     <div className="backup-option-variant">
-                      <label for="tags">
-                        Omit
-                        <input
-                          type="radio"
-                          name="tags"
-                          onChange={() => this.changePolicy("tags", "omit")}
-                          checked={this.state.policies.tags === "omit"}
-                        />
-                      </label>
+                      <div>Omit</div>
+                      <input
+                        type="radio"
+                        name="tags"
+                        onChange={() => this.changePolicy("tags", "omit")}
+                        checked={this.state.policies.tags === "omit"}
+                      />
                     </div>
                   </div>
                 </div>
