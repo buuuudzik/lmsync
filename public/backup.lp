@@ -77,11 +77,11 @@ function handlePOST()
 	end
 
 	for k,c in ipairs(current_objects) do
-		if backupObjectsIndex[v.id] then
-			backupObjectsIndex[v.id].currentObject = c
-			local obj = getById(t.object)
+		if backupObjectsIndex[c.id] then
+			backupObjectsIndex[c.id].currentObject = c
+			local obj = getById(c.id)
 			local object = obj.object
-			local currentTags = obj.currentTags
+			local currentTags = obj.currentTags or {}
 
 			if object.name ~= c.name then table.insert(withDiffName, c.id) end
 			if object.type ~= c.type then table.insert(withDiffType, c.id) end
@@ -171,7 +171,6 @@ function handlePOST()
 			local v = getById(id).object;
 			local tags = getById(id).tags;
 			local c = getById(id).currentObject;
-			local cTags = getById(id).currentTags;
 			
 			db:update("objects", { tagcache = v.tagcache }, { id = v.id } )
 			if #currentTags > 0 then db:delete("objecttags", { object = id }) end
@@ -188,7 +187,7 @@ function handlePOST()
 			local currentTagsIndex = {}
 
 			local tagcache = ""
-			if currentTags then
+			if typeof(currentTags) == "table" then
 				for _,t in ipairs(currentTags) do
 					currentTagsIndex[t.tag] = true
 					tagcache = tagcache .. " " .. t.tag
