@@ -190,7 +190,7 @@ function handlePOST()
 			local currentTagsIndex = {}
 
 			local tagcache = ""
-			if typeof(currentTags) == "table" then
+			if type(currentTags) == "table" then
 				for _,t in ipairs(currentTags) do
 					currentTagsIndex[t.tag] = true
 					tagcache = tagcache .. " " .. t.tag
