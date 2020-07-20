@@ -35,6 +35,7 @@ function handlePOST()
 		name = getvar("name") or "replace",
 		value = getvar("value") or "useLater",
 		comment = getvar("comment") or "replace",
+		enums = getvar("enums") or "replace",
 		type = getvar("type") or "replace",
 		tags = getvar("tags") or "concat"
 	}
@@ -61,6 +62,7 @@ function handlePOST()
 	local withDiffTime = {}
 	local withDiffType = {}
 	local withDiffComment = {}
+	local withDiffEnums = {}
 	
 	-- parse and solve conflicts
 	local current_objects = db:getall('SELECT * FROM objects')
@@ -86,6 +88,7 @@ function handlePOST()
 			if object.name ~= c.name then table.insert(withDiffName, c.id) end
 			if object.type ~= c.type then table.insert(withDiffType, c.id) end
 			if object.comment ~= c.comment then table.insert(withDiffComment, c.id) end
+			if object.enums ~= c.enums then table.insert(withDiffEnums, c.id) end
 			if object.tagcache ~= c.tagcache then
 				table.insert(withDiffTags, c.id)
 			else
@@ -156,7 +159,6 @@ function handlePOST()
 	if policies.type == "replace" then
 		for k,id in ipairs(withDiffType) do
 			local v = getById(id).object;
-			local c = getById(id).currentObject;
 			db:update('objects', { type = v.type }, { id = v.id })
 		end
 	end
@@ -164,8 +166,14 @@ function handlePOST()
 	if policies.comment == "replace" then
 		for k,id in ipairs(withDiffComment) do
 			local v = getById(id).object;
-			local c = getById(id).currentObject;
 			db:update('objects', { comment = v.comment }, { id = v.id })
+		end
+	end
+
+	if policies.enums == "replace" then
+		for k,id in ipairs(withDiffEnums) do
+			local v = getById(id).object;
+			db:update('objects', { enums = v.enums }, { id = v.id })
 		end
 	end
 
@@ -200,7 +208,7 @@ function handlePOST()
 			
 			-- when in tagcache there are some tags which doesn't exists in tags
 			local tagsToAdd = {}
-			
+
 			local currentTagcache = {}
 			if c.tagcache then
 				currentTagcache = string.split(c.tagcache, " ")

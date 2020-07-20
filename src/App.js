@@ -18,6 +18,7 @@ class App extends React.Component {
         value: "useLater", // "replace" || "let"
         type: "replace", // "replace" || "let"
         comment: "let", // "replace" || "let"
+        enums: "let", // "replace" || "let"
         tags: "concat", // "replace" || "concat" || "let"
       },
     };
@@ -197,6 +198,12 @@ class App extends React.Component {
                   <div>
                     <div>Update comment?</div>
                     {this.createPolicyCheckbox("comment", "replace", "let")}
+                  </div>
+                </div>
+                <div className="backup-option">
+                  <div>
+                    <div>Update enums?</div>
+                    {this.createPolicyCheckbox("enums", "replace", "let")}
                   </div>
                 </div>
               </div>
