@@ -34,6 +34,8 @@ function handlePOST()
 		notExisting = getvar("notExisting") or "let",
 		name = getvar("name") or "replace",
 		value = getvar("value") or "useLater",
+		comment = getvar("comment") or "replace",
+		type = getvar("type") or "replace",
 		tags = getvar("tags") or "concat"
 	}
 
@@ -57,6 +59,8 @@ function handlePOST()
 	local withDiffName = {}
 	local withDiffTags = {}
 	local withDiffTime = {}
+	local withDiffType = {}
+	local withDiffComment = {}
 	
 	-- parse and solve conflicts
 	local current_objects = db:getall('SELECT * FROM objects')
@@ -80,6 +84,8 @@ function handlePOST()
 			local currentTags = obj.currentTags
 
 			if object.name ~= c.name then table.insert(withDiffName, c.id) end
+			if object.type ~= c.type then table.insert(withDiffType, c.id) end
+			if object.comment ~= c.comment then table.insert(withDiffComment, c.id) end
 			if object.tagcache ~= c.tagcache then
 				table.insert(withDiffTags, c.id)
 			else
@@ -141,6 +147,22 @@ function handlePOST()
 			if v.updatetime > c.updatetime then
 				db:update('objects', { value = v.value, updatetime = v.updatetime }, { id = v.id })
 			end
+		end
+	end
+
+	if policies.type == "replace" then
+		for k,id in ipairs(withDiffType) do
+			local v = getById(id).object;
+			local c = getById(id).currentObject;
+			db:update('objects', { type = v.type }, { id = v.id })
+		end
+	end
+
+	if policies.comment == "replace" then
+		for k,id in ipairs(withDiffComment) do
+			local v = getById(id).object;
+			local c = getById(id).currentObject;
+			db:update('objects', { comment = v.comment }, { id = v.id })
 		end
 	end
 

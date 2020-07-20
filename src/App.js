@@ -16,6 +16,8 @@ class App extends React.Component {
         notExisting: "let", // "let" || "delete"
         name: "replace", // "replace" || "let" Could crash some scripts
         value: "useLater", // "replace" || "let"
+        type: "replace", // "replace" || "let"
+        comment: "let", // "replace" || "let"
         tags: "concat", // "replace" || "concat" || "let"
       },
     };
@@ -183,6 +185,18 @@ class App extends React.Component {
                         />
                       </label>
                     </div>
+                  </div>
+                </div>
+                <div className="backup-option">
+                  <div>
+                    <div>Update type?</div>
+                    {this.createPolicyCheckbox("type", "replace", "let")}
+                  </div>
+                </div>
+                <div className="backup-option">
+                  <div>
+                    <div>Update comment?</div>
+                    {this.createPolicyCheckbox("comment", "replace", "let")}
                   </div>
                 </div>
               </div>
