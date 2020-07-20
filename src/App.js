@@ -15,8 +15,7 @@ class App extends React.Component {
         newObject: "create", // "create" || "omit"
         notExisting: "let", // "let" || "delete"
         name: "replace", // "replace" || "let" Could crash some scripts
-        value: "replace", // "replace" || "let"
-        updatetime: "replace", // "replace" || "let"
+        value: "useLater", // "replace" || "let"
         tags: "concat", // "replace" || "concat" || "let"
       },
     };
@@ -148,15 +147,15 @@ class App extends React.Component {
                 </div>
                 <div className="backup-option">
                   <div>
-                    <div>Update values?</div>
-                    {this.createPolicyCheckbox("value", "replace", "let")}
+                    <div>Use later values?</div>
+                    {this.createPolicyCheckbox("value", "useLater", "let")}
                   </div>
                 </div>
                 <div className="backup-option">
                   <div>
                     <div>Update tags?</div>
                     <div className="backup-option-variant">
-                      <div>Concat?</div>
+                      <div>Concat</div>
                       <input
                         type="radio"
                         name="tags"
@@ -165,7 +164,7 @@ class App extends React.Component {
                       />
                     </div>
                     <div className="backup-option-variant">
-                      <div>Replace?</div>
+                      <div>Replace</div>
                       <input
                         type="radio"
                         name="tags"
@@ -174,20 +173,16 @@ class App extends React.Component {
                       />
                     </div>
                     <div className="backup-option-variant">
-                      <div>Omit?</div>
-                      <input
-                        type="radio"
-                        name="tags"
-                        onChange={() => this.changePolicy("tags", "omit")}
-                        checked={this.state.policies.tags === "omit"}
-                      />
+                      <label for="tags">
+                        Omit
+                        <input
+                          type="radio"
+                          name="tags"
+                          onChange={() => this.changePolicy("tags", "omit")}
+                          checked={this.state.policies.tags === "omit"}
+                        />
+                      </label>
                     </div>
-                  </div>
-                </div>
-                <div className="backup-option">
-                  <div>
-                    <div>Update updatetime?</div>
-                    {this.createPolicyCheckbox("updatetime", "replace", "let")}
                   </div>
                 </div>
               </div>

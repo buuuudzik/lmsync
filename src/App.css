@@ -370,6 +370,7 @@ input[type="radio"] {
 
 .backup-options {
   display: flex;
+  flex-wrap: wrap;
 }
 
 .backup-option {

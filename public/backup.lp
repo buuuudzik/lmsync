@@ -5,8 +5,8 @@ _SCRIPTNAME = 'LM Sync'
 requestMethod = ngx.var.request_method
 
 function handleGET()
-	local objects = db:getall('SELECT * FROM objects')
-	local object_tags = db:getall('SELECT * FROM objecttags')
+	local objects = db:getall('SELECT * FROM objects') or {};
+	local object_tags = db:getall('SELECT * FROM objecttags') or {}
 
 	local backup = {
 		objects = objects,
@@ -26,12 +26,14 @@ function handlePOST()
 		return print('not saved')
 	end
 
+	if type(backup.objects) ~= "table" then return print("There is no objects!") end
+	if type(backup.tags) ~= "table" then return print("There is no tags!") end
+
 	local policies = {
 		newObject = getvar("newObject") or "create",
 		notExisting = getvar("notExisting") or "let",
 		name = getvar("name") or "replace",
-		value = getvar("value") or "replace",
-		updatetime = getvar("updatetime") or "replace",
+		value = getvar("value") or "useLater",
 		tags = getvar("tags") or "concat"
 	}
 
@@ -53,7 +55,6 @@ function handlePOST()
 	local toDeleteObjects = {} -- czy usuwać je czy stworzyć ich listę?
 	local newObjects = {}	
 	local withDiffName = {}
-	local withDiffValue = {}
 	local withDiffTags = {}
 	local withDiffTime = {}
 	
@@ -61,12 +62,44 @@ function handlePOST()
 	local current_objects = db:getall('SELECT * FROM objects')
 	local current_object_tags = db:getall('SELECT * FROM objecttags')
 
-	for k,v in ipairs(current_objects) do
+	for k,t in ipairs(current_object_tags) do
+		local obj = getById(t.object)
+		if obj then
+			if not obj.currentTags then
+				obj.currentTags = {}
+			end
+			table.insert(obj.currentTags, t)
+		end
+	end
+
+	for k,c in ipairs(current_objects) do
 		if backupObjectsIndex[v.id] then
-			backupObjectsIndex[v.id].currentObject = v
-			if backupObjectsIndex[v.id].object.name ~= v.name then table.insert(withDiffName, v.id) end
-			if backupObjectsIndex[v.id].object.value ~= v.value then table.insert(withDiffValue, v.id) end
-			if backupObjectsIndex[v.id].object.tagcache ~= v.tagcache then table.insert(withDiffTags, v.id) end
+			backupObjectsIndex[v.id].currentObject = c
+			local obj = getById(t.object)
+			local object = obj.object
+			local currentTags = obj.currentTags
+
+			if object.name ~= c.name then table.insert(withDiffName, c.id) end
+			if object.tagcache ~= c.tagcache then
+				table.insert(withDiffTags, c.id)
+			else
+				-- compare tagcache with tags
+				local tagcacheIndex = {}
+				local tagcacheParts = {}
+				if type(c.tagcache) == "table" then
+					tagcacheParts = string.split(c.tagcache, " ")
+				end
+
+				for _,tag in ipairs(tagcacheParts) do
+					tagcacheIndex[tag] = true;
+				end
+
+				for _,tag in ipairs(currentTags) do
+					if not tagcacheIndex[tag] then
+						table.insert(withDiffTags, c.id)
+					end
+				end
+			end
 			if backupObjectsIndex[v.id].object.updatetime ~= v.updatetime then table.insert(withDiffTime, v.id) end
 		else
 			table.insert(toDeleteObjects, v.id)
@@ -76,16 +109,6 @@ function handlePOST()
 	for k,v in pairs(backupObjectsIndex) do
 		if not v.currentObject then
 			table.insert(newObjects, v.object.id)
-		end
-	end
-
-	for k,t in ipairs(current_object_tags) do
-		local obj = getById(t.object)
-		if obj then
-			if not obj.currentTags then
-				obj.currentTags = {}
-			end
-			table.insert(obj.currentTags, t)
 		end
 	end
 
@@ -111,17 +134,13 @@ function handlePOST()
 		end
 	end
 
-	if policies.value == "replace" then
-		for k,id in ipairs(withDiffValue) do
-			local v = getById(id).object;
-			db:update('objects', { value = v.value, datahex = v.datahex }, { id = v.id })
-		end
-	end
-
-	if policies.updatetime == "replace" then
+	if policies.value == "useLater" then
 		for k,id in ipairs(withDiffTime) do
 			local v = getById(id).object;
-			db:update('objects', { updatetime = v.updatetime }, { id = v.id })
+			local c = getById(id).currentObject;
+			if v.updatetime > c.updatetime then
+				db:update('objects', { value = v.value, updatetime = v.updatetime }, { id = v.id })
+			end
 		end
 	end
 
@@ -154,7 +173,19 @@ function handlePOST()
 				end
 			end
 
-			-- usuń duplikaty
+			-- when in tagcache there are some tags which doesn't exists in tags
+			local currentTagcache = {}
+			if c.tagcache then
+				currentTagcache = string.split(c.tagcache, " ")
+				for _,tag in ipairs(currentTagcache) do
+					if tag and not currentTagsIndex[tag] then
+						table.insert(tagsToAdd, { object = c.id, tag = tag })
+						currentTagsIndex[tag] = true
+					end
+				end
+			end
+
+			-- remove duplicates
 			local tagsToAdd = {}
 			if tags then
 				for _,t in ipairs(tags) do
