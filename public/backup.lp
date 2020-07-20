@@ -106,9 +106,12 @@ function handlePOST()
 					end
 				end
 			end
-			if backupObjectsIndex[v.id].object.updatetime ~= v.updatetime then table.insert(withDiffTime, v.id) end
+
+			if backupObjectsIndex[c.id].object.updatetime ~= c.updatetime then
+				table.insert(withDiffTime, c.id)
+			end
 		else
-			table.insert(toDeleteObjects, v.id)
+			table.insert(toDeleteObjects, c.id)
 		end
 	end
 
