@@ -197,7 +197,10 @@ function handlePOST()
 				end
 			end
 
+			
 			-- when in tagcache there are some tags which doesn't exists in tags
+			local tagsToAdd = {}
+			
 			local currentTagcache = {}
 			if c.tagcache then
 				currentTagcache = string.split(c.tagcache, " ")
@@ -210,7 +213,6 @@ function handlePOST()
 			end
 
 			-- remove duplicates
-			local tagsToAdd = {}
 			if tags then
 				for _,t in ipairs(tags) do
 					if not currentTagsIndex[t.tag] then
