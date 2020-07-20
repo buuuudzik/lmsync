@@ -173,10 +173,7 @@ function handlePOST()
 	if policies.enums == "replace" then
 		for k,id in ipairs(withDiffEnums) do
 			local v = getById(id).object;
-			-- db:update('objects', { enums = escape(v.enums) }, { id = v.id })
-			local query = "UPDATE objects SET enums = '" .. v.enums .. "' WHERE id = " .. tostring(v.id)
-			local res = db:execute(query)
-			log(res, query)
+			db:update('objects', { enums = v.enums }, { id = v.id })
 		end
 	end
 
