@@ -37,6 +37,7 @@ function handlePOST()
 		comment = getvar("comment") or "replace",
 		enums = getvar("enums") or "replace",
 		datatype = getvar("datatype") or "replace",
+		visparams = getvar("visparams") or "replace",
 		tags = getvar("tags") or "concat"
 	}
 
@@ -61,6 +62,7 @@ function handlePOST()
 	local withDiffTags = {}
 	local withDiffTime = {}
 	local withDiffDatatype = {}
+	local withDiffVisparams = {}
 	local withDiffComment = {}
 	local withDiffEnums = {}
 	
@@ -87,6 +89,7 @@ function handlePOST()
 
 			if object.name ~= "" and object.name ~= c.name then table.insert(withDiffName, c.id) end
 			if object.datatype ~= c.datatype then table.insert(withDiffDatatype, c.id) end
+			if object.visparams ~= c.visparams then table.insert(withDiffVisparams, c.id) end
 			if object.comment ~= "" and object.comment ~= c.comment then table.insert(withDiffComment, c.id) end
 			if object.enums ~= c.enums then table.insert(withDiffEnums, c.id) end
 			if object.tagcache ~= c.tagcache then
@@ -160,6 +163,13 @@ function handlePOST()
 		for k,id in ipairs(withDiffDatatype) do
 			local v = getById(id).object;
 			db:update('objects', { datatype = v.datatype }, { id = v.id })
+		end
+	end
+
+	if policies.visparams == "replace" then
+		for k,id in ipairs(withDiffVisparams) do
+			local v = getById(id).object;
+			db:update('objects', { visparams = v.visparams }, { id = v.id })
 		end
 	end
 

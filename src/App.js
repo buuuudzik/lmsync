@@ -19,6 +19,7 @@ class App extends React.Component {
         datatype: "replace", // "replace" || "let"
         comment: "let", // "replace" || "let"
         enums: "let", // "replace" || "let"
+        visparams: "let", // "replace" || "let"
         tags: "concat", // "replace" || "concat" || "let"
       },
     };
@@ -204,6 +205,12 @@ class App extends React.Component {
                   <div>
                     <div>Update enums?</div>
                     {this.createPolicyCheckbox("enums", "replace", "let")}
+                  </div>
+                </div>
+                <div className="backup-option">
+                  <div>
+                    <div>Update visparams?</div>
+                    {this.createPolicyCheckbox("visparams", "replace", "let")}
                   </div>
                 </div>
               </div>
