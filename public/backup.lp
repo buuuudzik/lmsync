@@ -36,7 +36,7 @@ function handlePOST()
 		value = getvar("value") or "useLater",
 		comment = getvar("comment") or "replace",
 		enums = getvar("enums") or "replace",
-		type = getvar("type") or "replace",
+		datatype = getvar("datatype") or "replace",
 		tags = getvar("tags") or "concat"
 	}
 
@@ -60,7 +60,7 @@ function handlePOST()
 	local withDiffName = {}
 	local withDiffTags = {}
 	local withDiffTime = {}
-	local withDiffType = {}
+	local withDiffDatatype = {}
 	local withDiffComment = {}
 	local withDiffEnums = {}
 	
@@ -86,7 +86,7 @@ function handlePOST()
 			local currentTags = obj.currentTags or {}
 
 			if object.name ~= "" and object.name ~= c.name then table.insert(withDiffName, c.id) end
-			if object.type ~= c.type then table.insert(withDiffType, c.id) end
+			if object.datatype ~= c.datatype then table.insert(withDiffDatatype, c.id) end
 			if object.comment ~= "" and object.comment ~= c.comment then table.insert(withDiffComment, c.id) end
 			if object.enums ~= c.enums then table.insert(withDiffEnums, c.id) end
 			if object.tagcache ~= c.tagcache then
@@ -156,10 +156,10 @@ function handlePOST()
 		end
 	end
 
-	if policies.type == "replace" then
-		for k,id in ipairs(withDiffType) do
+	if policies.datatype == "replace" then
+		for k,id in ipairs(withDiffDatatype) do
 			local v = getById(id).object;
-			db:update('objects', { type = v.type }, { id = v.id })
+			db:update('objects', { datatype = v.datatype }, { id = v.id })
 		end
 	end
 

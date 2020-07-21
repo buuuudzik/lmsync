@@ -16,7 +16,7 @@ class App extends React.Component {
         notExisting: "let", // "let" || "delete"
         name: "replace", // "replace" || "let" Could crash some scripts
         value: "useLater", // "replace" || "let"
-        type: "replace", // "replace" || "let"
+        datatype: "replace", // "replace" || "let"
         comment: "let", // "replace" || "let"
         enums: "let", // "replace" || "let"
         tags: "concat", // "replace" || "concat" || "let"
@@ -190,8 +190,8 @@ class App extends React.Component {
                 </div>
                 <div className="backup-option">
                   <div>
-                    <div>Update type?</div>
-                    {this.createPolicyCheckbox("type", "replace", "let")}
+                    <div>Update datatype?</div>
+                    {this.createPolicyCheckbox("datatype", "replace", "let")}
                   </div>
                 </div>
                 <div className="backup-option">
