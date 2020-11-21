@@ -104,7 +104,7 @@ class App extends React.Component {
           <div className="loading">
             <div className="loading-text">
               {loadingCause ? loadingCause : "Loading..."}
-              <Loader type="Puff" color="#00BFFF" height={60} width={60} />
+              <Loader type="Puff" color="#8fbc8f" height={60} width={60} />
             </div>
           </div>
         ) : null}
