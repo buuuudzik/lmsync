@@ -100,8 +100,10 @@ class App extends React.Component {
     return (
       <div className="App">
         {loading ? (
-          <div>
-            <div>{loadingCause ? loadingCause : "Loading..."}</div>
+          <div className="loading">
+            <div className="loading-text">
+              {loadingCause ? loadingCause : "Loading..."}
+            </div>
           </div>
         ) : null}
         {this.state.alert ? (
