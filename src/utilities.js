@@ -13,7 +13,7 @@ export const parseResponse = async (response) => {
       const text = await response.text();
       return text;
     } catch (err) {}
-    return res.status;
+    return response.status;
   } else {
     return false;
   }
