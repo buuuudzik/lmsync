@@ -66,18 +66,20 @@ function syncObjectTags(objectGA, backupTags, mode)
 	grp.settags(objectGA, filterEmptyStrings(resultTags))
 end
 
-function getAllObjects()
-	return db:getall('SELECT * FROM objects') or {}
-end
+queries = {
+	getAllObjects = function getAllObjects()
+		return db:getall('SELECT * FROM objects') or {}
+	end,
 
-function getAllTags()
-	return db:getall('SELECT * FROM objecttags') or {}
-end
+	getAllTags = function()
+		return db:getall('SELECT * FROM objecttags') or {}
+	end,
+}
 
 function handleGET()
 	local backup = {
-		objects = getAllObjects(),
-		tags = getAllTags(),
+		objects = queries.getAllObjects(),
+		tags = queries.getAllTags(),
 	}
   	print(json.encode(backup))
 end
@@ -150,8 +152,8 @@ function handlePOST()
 	local withDiffEnums = {}
 	
 	-- parse and solve conflicts
-	local currentObjects = getAllObjects()
-	local currentObjectTags = getAllTags()
+	local currentObjects = queries.getAllObjects()
+	local currentObjectTags = queries.getAllTags()
 
 	for k,t in ipairs(currentObjectTags) do
 		local obj = getById(t.object)
