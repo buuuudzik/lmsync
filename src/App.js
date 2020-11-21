@@ -2,6 +2,7 @@ import React from "react";
 import "./App.css";
 import { downloadBackup, parseResponse } from "./utilities";
 import UploaderBackup from "./components/UI/UploaderBackup/UploaderBackup";
+import Loader from "react-loader-spinner";
 
 class App extends React.Component {
   constructor(props) {
@@ -103,6 +104,7 @@ class App extends React.Component {
           <div className="loading">
             <div className="loading-text">
               {loadingCause ? loadingCause : "Loading..."}
+              <Loader type="Puff" color="#00BFFF" height={60} width={60} />
             </div>
           </div>
         ) : null}
