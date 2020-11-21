@@ -4,13 +4,22 @@ require('json')
 _SCRIPTNAME = 'LM Sync'
 requestMethod = ngx.var.request_method
 
+function getSafelyTable(t)
+	if t and type(t) == "table" then
+		return t
+	end
+	return {}
+end
+
 function addToIndex(values, index)
+	values = getSafelyTable(values)
 	for k,v in ipairs(values) do
-		index[v] = true
+		index[v] = values
 	end
 end
 
 function getIndexKeys(index)
+	index = getSafelyTable(index)
 	local keys = {}
 	for k,v in pairs(index) do
 		table.insert(keys, k)
@@ -18,11 +27,21 @@ function getIndexKeys(index)
 	return keys
 end
 
-function getKeyValues(objects, key)
+function filterEmptyStrings(values)
+	values = getSafelyTable(values)
+	local filtered = {}
+	for k,v in ipairs(values) do
+		if not v or v == "" then table.insert(filtered, v) end
+	end
+	return filtered
+end
+
+function getKeyValues(index, key)
+	index = getSafelyTable(index)
 	local values = {}
-	for k,v in ipairs(objects) do
+	for k,v in ipairs(index) do
 		table.insert(values, v[key])
-		end
+	end
 	return values
 end
 
@@ -38,22 +57,19 @@ function syncObjectTags(objectGA, backupTags, mode)
 	local resultTagsIndex = {}
 	if mode == "concat" then
 		addToIndex(tags, resultTagsIndex)
-			addToIndex(backupTags, resultTagsIndex)
+		addToIndex(backupTags, resultTagsIndex)
 	elseif mode == "replace" then
 		addToIndex(backupTags, resultTagsIndex)
 	end
 
 	local resultTags = getIndexKeys(resultTagsIndex)
-	grp.settags(objectGA, resultTags)
+	grp.settags(objectGA, filterEmptyStrings(resultTags))
 end
 
 function handleGET()
-	local objects = db:getall('SELECT * FROM objects') or {};
-	local tags = db:getall('SELECT * FROM objecttags') or {}
-
 	local backup = {
-		objects = objects,
-		tags = tags,
+		objects = db:getall('SELECT * FROM objects') or {},
+		tags = db:getall('SELECT * FROM objecttags') or {},
 	}
   	print(json.encode(backup))
 end
@@ -69,10 +85,14 @@ function handlePOST()
 		return print('not saved')
 	end
 
-	if type(backup.objects) ~= "table" then return print("There is no objects!") end
+	if type(backup.objects) ~= "table" then
+		return print("There is no objects!")
+	end
 
 	-- Correct to support old backup version
-	if type(backup.objectTags) == "table" then backup.tags = backup.objectTags end
+	if type(backup.objectTags) == "table" then
+		backup.tags = backup.objectTags
+	end
 
 	local policies = {
 		newObject = getvar("newObject") or "create",
@@ -87,13 +107,13 @@ function handlePOST()
 	}
 
 	if type(backup.tags) ~= "table" then
-    		if policies.tags ~= "omit" then
-    			-- There are no tags so the result would be a crash 
-    			return print("There is no tags!")
+		if policies.tags ~= "omit" then
+			-- There are no tags so the result would be a crash 
+			return print("There is no tags!")
   		else
-    			-- There will be no manipulation on tags so it can be empty table
-    			backup.tags = {}
-    		end
+			-- There will be no manipulation on tags so it can be empty table
+			backup.tags = {}
+		end
 	end
 
 	local backupObjectsIndex = {}
