@@ -4,13 +4,56 @@ require('json')
 _SCRIPTNAME = 'LM Sync'
 requestMethod = ngx.var.request_method
 
+function addToIndex(values, index)
+	for k,v in ipairs(values) do
+		index[v] = true
+	end
+end
+
+function getIndexKeys(index)
+	local keys = {}
+	for k,v in pairs(index) do
+		table.insert(keys, k)
+	end
+	return keys
+end
+
+function getKeyValues(objects, key)
+	local values = {}
+	for k,v in ipairs(objects) do
+		table.insert(values, v[key])
+		end
+	return values
+end
+
+function getAddr(id)
+  return knxlib.decodega(id);
+end
+
+function syncObjectTags(objectGA, backupTags, mode)
+	if mode == "omit" then return; end
+
+	local tags = grp.gettags(objectGA)
+
+	local resultTagsIndex = {}
+	if mode == "concat" then
+		addToIndex(tags, resultTagsIndex)
+			addToIndex(backupTags, resultTagsIndex)
+	elseif mode == "replace" then
+		addToIndex(backupTags, resultTagsIndex)
+	end
+
+	local resultTags = getIndexKeys(resultTagsIndex)
+	grp.settags(objectGA, resultTags)
+end
+
 function handleGET()
 	local objects = db:getall('SELECT * FROM objects') or {};
-	local object_tags = db:getall('SELECT * FROM objecttags') or {}
+	local tags = db:getall('SELECT * FROM objecttags') or {}
 
 	local backup = {
 		objects = objects,
-		objectTags = objects_tags,
+		tags = tags,
 	}
   	print(json.encode(backup))
 end
@@ -27,7 +70,9 @@ function handlePOST()
 	end
 
 	if type(backup.objects) ~= "table" then return print("There is no objects!") end
-	if type(backup.tags) ~= "table" then return print("There is no tags!") end
+
+	-- Correct to support old backup version
+	if type(backup.objectTags) == "table" then backup.tags = backup.objectTags end
 
 	local policies = {
 		newObject = getvar("newObject") or "create",
@@ -40,6 +85,16 @@ function handlePOST()
 		visparams = getvar("visparams") or "replace",
 		tags = getvar("tags") or "concat"
 	}
+
+	if type(backup.tags) ~= "table" then
+    		if policies.tags ~= "omit" then
+    			-- There are no tags so the result would be a crash 
+    			return print("There is no tags!")
+  		else
+    			-- There will be no manipulation on tags so it can be empty table
+    			backup.tags = {}
+    		end
+	end
 
 	local backupObjectsIndex = {}
 	for k,v in ipairs(backup.objects) do
@@ -67,10 +122,10 @@ function handlePOST()
 	local withDiffEnums = {}
 	
 	-- parse and solve conflicts
-	local current_objects = db:getall('SELECT * FROM objects')
-	local current_object_tags = db:getall('SELECT * FROM objecttags')
+	local currentObjects = db:getall('SELECT * FROM objects')
+	local currentObjectTags = db:getall('SELECT * FROM objecttags')
 
-	for k,t in ipairs(current_object_tags) do
+	for k,t in ipairs(currentObjectTags) do
 		local obj = getById(t.object)
 		if obj then
 			if not obj.currentTags then
@@ -80,7 +135,7 @@ function handlePOST()
 		end
 	end
 
-	for k,c in ipairs(current_objects) do
+	for k,c in ipairs(currentObjects) do
 		if backupObjectsIndex[c.id] then
 			backupObjectsIndex[c.id].currentObject = c
 			local obj = getById(c.id)
@@ -92,26 +147,9 @@ function handlePOST()
 			if object.visparams ~= c.visparams then table.insert(withDiffVisparams, c.id) end
 			if object.comment ~= "" and object.comment ~= c.comment then table.insert(withDiffComment, c.id) end
 			if object.enums ~= c.enums then table.insert(withDiffEnums, c.id) end
-			if object.tagcache ~= c.tagcache then
-				table.insert(withDiffTags, c.id)
-			else
-				-- compare tagcache with tags
-				local tagcacheIndex = {}
-				local tagcacheParts = {}
-				if type(c.tagcache) == "table" then
-					tagcacheParts = string.split(c.tagcache, " ")
-				end
-
-				for _,tag in ipairs(tagcacheParts) do
-					tagcacheIndex[tag] = true;
-				end
-
-				for _,tag in ipairs(currentTags) do
-					if not tagcacheIndex[tag] then
-						table.insert(withDiffTags, c.id)
-					end
-				end
-			end
+			
+			-- Always rewrite tags when replace or concat
+			if policies.tags ~= "omit" then table.insert(withDiffTags, c.id) end
 
 			if backupObjectsIndex[c.id].object.updatetime ~= c.updatetime then
 				table.insert(withDiffTime, c.id)
@@ -127,18 +165,10 @@ function handlePOST()
 		end
 	end
 
-	-- actions according to the defined policies
-	if policies.newObject == "create" then
-		local toInsert = {}
-		for k,id in ipairs(newObjects) do
-			local obj = getById(id).object
-			if obj then db:insert('objects', obj) end
-		end
-	end
-
 	if policies.notExisting == "delete" then
 		for k,id in ipairs(toDeleteObjects) do
 			db:delete("objects", { id = id })
+			db:delete("objecttags", { object = id })
 		end
 	end
 
@@ -189,63 +219,27 @@ function handlePOST()
 
 	if policies.tags == "replace" then
 		for k,id in ipairs(withDiffTags) do
-			local v = getById(id).object;
 			local tags = getById(id).tags;
 			local c = getById(id).currentObject;
-			
-			db:update("objects", { tagcache = v.tagcache }, { id = v.id } )
-			if #currentTags > 0 then db:delete("objecttags", { object = id }) end
-			for _,t in ipairs(tags) do
-				db:insert("objecttags", t)
-			end
+			grp.settags(getAddr(c.address), getKeyValues(tags, "tag"))
 		end
 	elseif policies.tags == "concat" then
 		for k,id in ipairs(withDiffTags) do
-			local v = getById(id).object;
 			local c = getById(id).currentObject;
 			local tags = getById(id).tags;
 			local currentTags = getById(id).currentTags;
-			local currentTagsIndex = {}
+			syncObjectTags(getAddr(c.address), getKeyValues(tags, "tag"), getKeyValues(currentTags, "tag"), "concat")
+		end
+	end
 
-			local tagcache = ""
-			if type(currentTags) == "table" then
-				for _,t in ipairs(currentTags) do
-					currentTagsIndex[t.tag] = true
-					tagcache = tagcache .. " " .. t.tag
-				end
-			end
-
-			
-			-- when in tagcache there are some tags which doesn't exists in tags
-			local tagsToAdd = {}
-
-			local currentTagcache = {}
-			if c.tagcache then
-				currentTagcache = string.split(c.tagcache, " ")
-				for _,tag in ipairs(currentTagcache) do
-					if tag and not currentTagsIndex[tag] then
-						table.insert(tagsToAdd, { object = c.id, tag = tag })
-						currentTagsIndex[tag] = true
-					end
-				end
-			end
-
-			-- remove duplicates
-			if tags then
-				for _,t in ipairs(tags) do
-					if not currentTagsIndex[t.tag] then
-						table.insert(tagsToAdd, t)
-						tagcache = tagcache .. " " .. t.tag
-					end
-				end
-			end
-
-			tagcache = tagcache:trim()
-			
-			db:update("objects", { tagcache = tagcache }, { id = v.id } )
-			if #tagsToAdd > 0 then log("tagsToAdd", #tagsToAdd, tagsToAdd[1]) end
-			for _,t in ipairs(tagsToAdd) do
-				db:insert("objecttags", t)
+	-- actions according to the defined policies
+	if policies.newObject == "create" then
+		local toInsert = {}
+		for k,id in ipairs(newObjects) do
+			local obj = getById(id).object
+			if obj then
+				db:insert('objects', obj)
+				grp.settags(getAddr(obj.address), getKeyValues(obj.tags, "tag"))
 			end
 		end
 	end
