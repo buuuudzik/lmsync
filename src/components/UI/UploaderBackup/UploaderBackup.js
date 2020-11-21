@@ -7,9 +7,11 @@ class UploaderBackup extends Component {
     file: null,
   };
 
-  onFormSubmit = (e) => {
+  onFormSubmit = async (e) => {
+    this.props.onSubmit ? this.props.onSubmit() : null;
     e.preventDefault(); // Stop form submit
-    this.fileUpload(this.state.file).then((response) => {
+    try {
+      const response = await this.fileUpload(this.state.file);
       if (typeof this.props.refresh === "function") {
         if (response.data.match("saved")) {
           this.props.refresh(null, response.data);
@@ -18,7 +20,10 @@ class UploaderBackup extends Component {
         }
       }
       console.log(response.data);
-    });
+      this.props.onSuccess ? this.props.onSuccess() : null;
+    } catch (err) {
+      this.props.onError ? this.props.onError(err) : null;
+    }
   };
   onChange = (e) => this.setState({ file: e.target.files[0] });
 

@@ -1,6 +1,6 @@
 import React from "react";
 import "./App.css";
-import { downloadBackup } from "./utilities";
+import { downloadBackup, parseResponse } from "./utilities";
 import UploaderBackup from "./components/UI/UploaderBackup/UploaderBackup";
 
 class App extends React.Component {
@@ -10,6 +10,8 @@ class App extends React.Component {
     this.alertTimeoutId = null;
 
     this.state = {
+      loading: false,
+      loadingCause: false,
       alert: null,
       policies: {
         newObject: "create", // "create" || "omit"
@@ -24,6 +26,10 @@ class App extends React.Component {
       },
     };
   }
+
+  changeLoading = (loading = false, loadingCause = "") => {
+    this.setState({ loading, loadingCause });
+  };
 
   getAlertColor = (alertType = "normal") => {
     const defaultColor = "#333";
@@ -90,9 +96,14 @@ class App extends React.Component {
   };
 
   render() {
-    const { alert } = this.state;
+    const { alert, loading, loadingCause } = this.state;
     return (
       <div className="App">
+        {loading ? (
+          <div>
+            <div>{loadingCause ? loadingCause : "Loading..."}</div>
+          </div>
+        ) : null}
         {this.state.alert ? (
           <div
             className="alert"
@@ -124,7 +135,21 @@ class App extends React.Component {
               <div className="backup-header">Download backup</div>
               <button
                 className="download-backup"
-                onClick={() => downloadBackup()}
+                onClick={async () => {
+                  this.changeLoading(true, "Downloading backup...");
+                  downloadBackup((succeed, err, response) => {
+                    this.changeLoading();
+                    if (!succeed) {
+                      this.alert(
+                        "Download failed",
+                        `This is probably the reason:\n${parseResponse(
+                          response
+                        )}`,
+                        "error"
+                      );
+                    }
+                  });
+                }}
               >
                 Download
               </button>
@@ -217,6 +242,7 @@ class App extends React.Component {
               <UploaderBackup
                 url={`backup.lp?${this.getPoliciesParams()}`}
                 refresh={(err) => {
+                  this.changeLoading();
                   if (err)
                     this.alert(
                       "Upload failed",
@@ -224,6 +250,9 @@ class App extends React.Component {
                       "error"
                     );
                   else this.alert("Upload succeed", "", "success");
+                }}
+                onSubmit={() => {
+                  this.changeLoading(true, "Uploading backup...");
                 }}
               />
             </div>
