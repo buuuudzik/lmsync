@@ -67,7 +67,7 @@ function syncObjectTags(objectGA, backupTags, mode)
 end
 
 queries = {
-	getAllObjects = function getAllObjects()
+	getAllObjects = function()
 		return db:getall('SELECT * FROM objects') or {}
 	end,
 
