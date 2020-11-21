@@ -8,7 +8,7 @@ class UploaderBackup extends Component {
   };
 
   onFormSubmit = async (e) => {
-    this.props.onSubmit ? this.props.onSubmit() : null;
+    if (this.props.onSubmit) this.props.onSubmit();
     e.preventDefault(); // Stop form submit
     try {
       const response = await this.fileUpload(this.state.file);
@@ -20,9 +20,9 @@ class UploaderBackup extends Component {
         }
       }
       console.log(response.data);
-      this.props.onSuccess ? this.props.onSuccess() : null;
+      if (this.props.onSuccess) this.props.onSuccess();
     } catch (err) {
-      this.props.onError ? this.props.onError(err) : null;
+      if (this.props.onError) this.props.onError(err);
     }
   };
   onChange = (e) => this.setState({ file: e.target.files[0] });
